@@ -2,6 +2,7 @@
 #include "SparkFunLSM6DS3.h"
 #include "Wire.h"
 #include "SPI.h"
+#include <math.h>
 
 
 // User led
@@ -31,8 +32,7 @@
 
 unsigned long fin = 0;
 float AngleX = 0.0;
-float AngleY = 0.0;
-float AngleZ = 0.0;
+float OffiAngle = 0.0;
 
 
 LSM6DS3 imu(I2C_MODE, 0x6B);   
@@ -42,6 +42,10 @@ void setup () {
   fin = millis();
   Serial.begin(115200);
   Wire.begin(SDA, SCL);
+
+  imu.settings.gyroRange = 245;
+  imu.settings.accelRange = 2;
+
 
   pinMode(EN_D, OUTPUT);
   pinMode(EN_G, OUTPUT);
@@ -66,33 +70,53 @@ if( imu.begin() != 0 )
 }
 
 void loop () {
+//Variation infinitésimale de temps (pour intégrer)
+unsigned long debut = millis();
+float dt = (debut - fin)/1000.0; 
+fin = debut;
+
+//(X car c'est l'axe qui nous intéresse) récupération de la vitesse angulaire du gyroscope
+// + correction approximative de l'offset (+2,5°/s)
 float degX =  imu.readFloatGyroX()- 2.5;
-float degY =  imu.readFloatGyroY()+ 2.5;
-float degZ =  imu.readFloatGyroZ()+ 2.5;
+
+//valeur estimée de l'angle par le gyroscope (sur le court terme correct et dérive sur le long terme)
+AngleX += degX*dt;
+
+  delay(10);
 
 
+//récuperation des valeurs de l'accéléromètre
+  float AccelX = imu.readFloatAccelX()-0.02;
+  float AccelY = imu.readFloatAccelY()+0.27;
+  float AccelZ = imu.readFloatAccelZ()+0.97;
+
+//passage en angle des valeurs de l'accéléromètre
+  float angleAX = atan2(AccelY, (sqrt(AccelX*AccelX+AccelZ*AccelZ)))*180/PI; 
+
+//implémentation d'un coefficient de "confiance" des 2 méthodes
+float alpha = 0.95;  
+
+//calcul final de l'angle avec regroupement des 2 méthodes
+AngleX = alpha*(AngleX) + (1 - alpha)*angleAX;
+
+Serial.println(AngleX);
 
 /*
-  Serial.print(imu.readFloatGyroX() - 2.5, 4);
-  Serial.print(" | ");
-  Serial.print(imu.readFloatGyroY() + 2.5, 4);
-  Serial.print(" | ");
-  Serial.println(imu.readFloatGyroZ() + 2.5, 4);*/
+//SEPARATION VLAD
+float gyroX = imu.readFloatGyroX();
+float gyroY = imu.readFloatGyroY();
+float gyroZ = imu.readFloatGyroZ();
 
-  delay(100);
+float accX = imu.readFloatAccelX();
+float accY = imu.readFloatAccelY();
+float accZ = imu.readFloatAccelZ();
 
-  unsigned long debut = millis();
-  float dt = (debut - fin)/1000.0;
-  fin = debut;
+float phiAcc = atan(accY/(sqrt(accX*accX+accZ*accZ)))*180/PI;
+float phiGyr;
+phiGyr += gyroX * dt;
 
-  AngleX += degX*dt;
-  AngleY += degY*dt;
-  AngleZ += degZ*dt;
-
-Serial.print(AngleX);
+Serial.print(phiAcc);
 Serial.print(" | ");
-Serial.print(AngleY);
-Serial.print(" | ");
-Serial.println(AngleZ);
-
+Serial.println(phiGyr);
+*/
 }
