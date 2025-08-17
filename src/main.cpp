@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include "SparkFunLSM6DS3.h"
+#include "Wire.h"
+#include "SPI.h"
+
 
 // User led
 #define LEDU1 25
@@ -25,8 +29,13 @@
 #define ADDR_IMU 0x6B
 #define ADDR_MAG 0x1E
 
+LSM6DS3 imu(I2C_MODE, 0x6B);   
+
+
 void setup () {
   
+  Serial.begin(115200);
+
   pinMode(EN_D, OUTPUT);
   pinMode(EN_G, OUTPUT);
 
@@ -38,10 +47,14 @@ void setup () {
   pinMode(IN_1_G, OUTPUT);
   pinMode(IN_2_G, OUTPUT);
 
-  digitalWrite(IN_1_D, HIGH);
-  digitalWrite(IN_2_D, LOW);
-  digitalWrite(IN_1_G, LOW);
-  digitalWrite(IN_2_G, HIGH);
+if( imu.beginCore() != 0 )
+  {
+    Serial.print("Error at beginCore().\n");
+  }
+  else
+  {
+    Serial.print("\nbeginCore() passed.\n");
+  }
 
 }
 
