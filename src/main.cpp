@@ -29,12 +29,19 @@
 #define ADDR_IMU 0x6B
 #define ADDR_MAG 0x1E
 
+unsigned long fin = 0;
+float AngleX = 0.0;
+float AngleY = 0.0;
+float AngleZ = 0.0;
+
+
 LSM6DS3 imu(I2C_MODE, 0x6B);   
 
 
 void setup () {
-  
+  fin = millis();
   Serial.begin(115200);
+  Wire.begin(SDA, SCL);
 
   pinMode(EN_D, OUTPUT);
   pinMode(EN_G, OUTPUT);
@@ -47,7 +54,7 @@ void setup () {
   pinMode(IN_1_G, OUTPUT);
   pinMode(IN_2_G, OUTPUT);
 
-if( imu.beginCore() != 0 )
+if( imu.begin() != 0 )
   {
     Serial.print("Error at beginCore().\n");
   }
@@ -59,5 +66,33 @@ if( imu.beginCore() != 0 )
 }
 
 void loop () {
+float degX =  imu.readFloatGyroX()- 2.5;
+float degY =  imu.readFloatGyroY()+ 2.5;
+float degZ =  imu.readFloatGyroZ()+ 2.5;
+
+
+
+/*
+  Serial.print(imu.readFloatGyroX() - 2.5, 4);
+  Serial.print(" | ");
+  Serial.print(imu.readFloatGyroY() + 2.5, 4);
+  Serial.print(" | ");
+  Serial.println(imu.readFloatGyroZ() + 2.5, 4);*/
+
+  delay(100);
+
+  unsigned long debut = millis();
+  float dt = (debut - fin)/1000.0;
+  fin = debut;
+
+  AngleX += degX*dt;
+  AngleY += degY*dt;
+  AngleZ += degZ*dt;
+
+Serial.print(AngleX);
+Serial.print(" | ");
+Serial.print(AngleY);
+Serial.print(" | ");
+Serial.println(AngleZ);
 
 }
