@@ -91,7 +91,7 @@ AngleX += degX*dt;
   float AccelZ = imu.readFloatAccelZ()+0.97;
 
 //passage en angle des valeurs de l'accéléromètre
-  float angleAX = atan2(AccelY, (sqrt(AccelX*AccelX+AccelZ*AccelZ)))*180/PI; 
+  float angleAX = atan2(AccelY, (sqrt(AccelX*AccelX+AccelZ*AccelZ)))*360/PI; 
 
 //implémentation d'un coefficient de "confiance" des 2 méthodes
 float alpha = 0.95;  
