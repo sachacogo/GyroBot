@@ -3,30 +3,31 @@
 #include "Wire.h"
 #include "SPI.h"
 #include <math.h>
+#include <Adafruit_Sensor.h>
 
 
-// User led
+// User LEDs
 #define LEDU1 25
 #define LEDU2 26
-// Enable moteurs droit et gauche
+// Enable right and left motors
 #define EN_D 23
 #define EN_G 4
-// Commande PWM moteur droit
+// PWM control pins for right motor
 #define IN_1_D 19
 #define IN_2_D 18
-// Commande PWM moteur gauche
+// PWM control pins for left motor
 #define IN_1_G 17
 #define IN_2_G 16
-// Encodeur gauche
+// Left encoder channels
 #define ENC_G_CH_A 32
 #define ENC_G_CH_B 33
-// Encodeur droit
+// Right encoder channels
 #define ENC_D_CH_A 27
 #define ENC_D_CH_B 14
-// I2C
+// I2C pins
 #define SDA 21
 #define SCL 22
-// Adresse I2C
+// I2C addresses
 #define ADDR_IMU 0x6B
 #define ADDR_MAG 0x1E
 
@@ -58,7 +59,7 @@ void setup () {
   pinMode(IN_1_G, OUTPUT);
   pinMode(IN_2_G, OUTPUT);
 
-if( imu.begin() != 0 )
+  if( imu.begin() != 0 )
   {
     Serial.print("Error at beginCore().\n");
   }
@@ -67,39 +68,59 @@ if( imu.begin() != 0 )
     Serial.print("\nbeginCore() passed.\n");
   }
 
+  //utilisation de la méthode du pwm car il n'y a pas de pin analogique sur une esp32
+  //on doit prendre une PIN digitale et lui associer un PWM
+  //le PWM est une méthode qui sert à transformer une PIN digitale en une PIN analogique
+  //en faisant varier sur 1 cycle le rapport HIGH/LOW et en calculant la moyenne sur ce cycle
+
+  ledcSetup(0, 1000, 8);
+  ledcSetup(1, 1000, 8);
+  ledcSetup(2, 1000, 8);
+  ledcSetup(3, 1000, 8);
+
+  ledcAttachPin(IN_1_D, 0);
+  ledcAttachPin(IN_2_D, 1);
+  ledcAttachPin(IN_1_G, 2);
+  ledcAttachPin(IN_2_G, 3);
+
+  
+
 }
 
 void loop () {
-//Variation infinitésimale de temps (pour intégrer)
+// Compute elapsed time for integration (in seconds)
 unsigned long debut = millis();
 float dt = (debut - fin)/1000.0; 
 fin = debut;
 
-//(X car c'est l'axe qui nous intéresse) récupération de la vitesse angulaire du gyroscope
-// + correction approximative de l'offset (+2,5°/s)
-float degX =  imu.readFloatGyroX()- 2.5;
+// Read angular velocity from gyroscope (X axis is relevant)
+// Apply approximate offset correction (+2.5°/s)
+float degX =  imu.readFloatGyroX() - 2.5;
 
-//valeur estimée de l'angle par le gyroscope (sur le court terme correct et dérive sur le long terme)
-AngleX += degX*dt;
+// Update estimated angle from gyroscope (accurate short-term, drifts long-term)
+AngleX += degX * dt;
 
   delay(10);
 
 
-//récuperation des valeurs de l'accéléromètre
-  float AccelX = imu.readFloatAccelX()-0.02;
-  float AccelY = imu.readFloatAccelY()+0.27;
-  float AccelZ = imu.readFloatAccelZ()+0.97;
+// Read accelerometer measurements
+float AccelX = imu.readFloatAccelX() - 0.02;
+float AccelY = imu.readFloatAccelY() + 0.27;
+float AccelZ = imu.readFloatAccelZ() + 0.97;
 
-//passage en angle des valeurs de l'accéléromètre
-  float angleAX = atan2(AccelY, (sqrt(AccelX*AccelX+AccelZ*AccelZ)))*360/PI; 
+// Convert accelerometer readings to tilt angle (degrees between -180 and 180)
+float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ)) * 360 / PI; 
 
-//implémentation d'un coefficient de "confiance" des 2 méthodes
+// Complementary filter coefficient to balance gyro and accelerometer
 float alpha = 0.95;  
 
-//calcul final de l'angle avec regroupement des 2 méthodes
-AngleX = alpha*(AngleX) + (1 - alpha)*angleAX;
+// Compute final angle by combining gyroscope integration and accelerometer angle
+AngleX = alpha * AngleX + (1 - alpha) * angleAX;
 
 Serial.println(AngleX);
+
+
+
 
 /*
 //SEPARATION VLAD
