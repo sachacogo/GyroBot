@@ -10,19 +10,14 @@
 
 
 
-float AngleX = 0.0;
-
 LSM6DS3 imu(I2C_MODE, 0x6B);   
 
 
 void setup () {
   fin = millis();
-  Serial.begin(115200);
-  Wire.begin(SDA, SCL);
-
-  imu.settings.gyroRange = 245;
-  imu.settings.accelRange = 2;
-
+  Serial.begin(SERIAL_BAUD);
+  Wire.begin(SDA_PIN, SCL_PIN);
+  initIMU(imu);
 
   pinMode(EN_D, OUTPUT);
   pinMode(EN_G, OUTPUT);
@@ -34,15 +29,6 @@ void setup () {
   pinMode(IN_2_D, OUTPUT);
   pinMode(IN_1_G, OUTPUT);
   pinMode(IN_2_G, OUTPUT);
-
-  if( imu.begin() != 0 )
-  {
-    Serial.print("Error at beginCore().\n");
-  }
-  else
-  {
-    Serial.print("\nbeginCore() passed.\n");
-  }
 
   //utilisation de la méthode du pwm car il n'y a pas de pin analogique sur une esp32
   //on doit prendre une PIN digitale et lui associer un PWM

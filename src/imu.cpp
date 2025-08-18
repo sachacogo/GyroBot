@@ -1,10 +1,14 @@
 #include "imu.hpp"
 #include "config.hpp"
 
+
+
+float roll = 0.0f;
+unsigned long fin = 0;
+
 void initIMU(LSM6DS3 &imu) {
     imu.settings.gyroRange = 245;
     imu.settings.accelRange = 2;
-    roll = 0.0;
 
     if (imu.begin() != 0) {
         Serial.print("Error at beginCore().\n");
@@ -31,4 +35,5 @@ float getRoll(LSM6DS3 &imu){
 
     // Compensation de l'angle estimé par le gyroscope par le filtre complémentaire
     roll = COMP_ALPHA * roll + (1 - COMP_ALPHA) * accRoll;
+    return roll;
 }

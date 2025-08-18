@@ -25,6 +25,6 @@ constexpr int ENC_D_CH_A = 27;
 constexpr int ENC_D_CH_B = 14;
 
 // I2C pins
-constexpr int SDA = 21;
-constexpr int SCL = 22;
+constexpr int SDA_PIN = 21;
+constexpr int SCL_PIN = 22;
 
