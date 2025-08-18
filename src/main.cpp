@@ -33,8 +33,20 @@
 
 unsigned long fin = 0;
 float AngleX = 0.0;
-float OffiAngle = 0.0;
+float AngleStable = 95;
 
+int Kp = 6;
+int Ki = 0.01;
+int Kd = 0.05;
+
+float error = 0.0;
+float d_error = 0;
+
+float P = 0.0;
+float I=0.0;
+float D = 0.0;
+
+float PID = 0.0;
 
 LSM6DS3 imu(I2C_MODE, 0x6B);   
 
@@ -68,24 +80,44 @@ void setup () {
     Serial.print("\nbeginCore() passed.\n");
   }
 
-  //utilisation de la méthode du pwm car il n'y a pas de pin analogique sur une esp32
-  //on doit prendre une PIN digitale et lui associer un PWM
-  //le PWM est une méthode qui sert à transformer une PIN digitale en une PIN analogique
-  //en faisant varier sur 1 cycle le rapport HIGH/LOW et en calculant la moyenne sur ce cycle
+  // Utilisation du PWM sur l'ESP32, car cette dernière ne dispose pas de broches analogiques.
+  // On associe une broche GPIO numérique à un canal PWM.
+  // Le PWM permet de simuler une sortie analogique à partir d'une broche numérique.
+  // En ajustant le rapport HIGH/LOW (duty cycle) sur chaque cycle, et en répétant ce cycle à une fréquence élevée (ici 1000 Hz),
+  // la broche de sortie fournit un signal perçu comme stable à la valeur moyenne souhaitée.
 
+
+  //ledcSetup(channelPWM, fréquence, résolution) (la résolution donne la précision à laquelle on peut choisir la valeur de notre signal)
   ledcSetup(0, 1000, 8);
   ledcSetup(1, 1000, 8);
   ledcSetup(2, 1000, 8);
   ledcSetup(3, 1000, 8);
 
+  //association des PINs et des channelPWM
   ledcAttachPin(IN_1_D, 0);
   ledcAttachPin(IN_2_D, 1);
   ledcAttachPin(IN_1_G, 2);
   ledcAttachPin(IN_2_G, 3);
 
-  
+}
+
+void stopMotor() {
+
+  ledcWrite(IN_1_D, 0);
+  ledcWrite(IN_2_D, 0);
+  ledcWrite(IN_1_G, 0);
+  ledcWrite(IN_2_G, 0);
 
 }
+
+void move(float speed1, float speed2) {
+  ledcWrite(0, speed1);
+  ledcWrite(1, speed2);
+  ledcWrite(2, speed2);
+  ledcWrite(3, speed1);
+} 
+
+
 
 void loop () {
 // Compute elapsed time for integration (in seconds)
@@ -109,7 +141,7 @@ float AccelY = imu.readFloatAccelY() + 0.27;
 float AccelZ = imu.readFloatAccelZ() + 0.97;
 
 // Convert accelerometer readings to tilt angle (degrees between -180 and 180)
-float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ)) * 360 / PI; 
+float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ))*360/PI; 
 
 // Complementary filter coefficient to balance gyro and accelerometer
 float alpha = 0.95;  
@@ -117,9 +149,35 @@ float alpha = 0.95;
 // Compute final angle by combining gyroscope integration and accelerometer angle
 AngleX = alpha * AngleX + (1 - alpha) * angleAX;
 
-Serial.println(AngleX);
 
 
+
+error = AngleStable -  AngleX;
+
+
+P = Kp*error;
+I+=Ki*error*dt;
+D=(error-d_error)/dt;
+d_error=error;
+
+PID = P+I+D;
+PID = constrain(PID, -255, 255);
+if(PID >= 0)
+{
+  move(PID,0);
+}else if(PID < 0){
+  move(0,-PID);
+}
+
+
+
+Serial.print(AngleX);
+Serial.print(" | ");
+Serial.print(angleAX);
+Serial.print(" | ");
+Serial.print(PID+50);
+Serial.print(" | ");
+Serial.println(-PID-50);
 
 
 /*
