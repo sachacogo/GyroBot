@@ -1,43 +1,11 @@
-#include <Arduino.h>
-#include "SparkFunLSM6DS3.h"
-#include "Wire.h"
-#include "SPI.h"
-#include <math.h>
-#include <Adafruit_Sensor.h>
+#include "gyro.hpp"
 
-
-// User LEDs
-#define LEDU1 25
-#define LEDU2 26
-// Enable right and left motors
-#define EN_D 23
-#define EN_G 4
-// PWM control pins for right motor
-#define IN_1_D 19
-#define IN_2_D 18
-// PWM control pins for left motor
-#define IN_1_G 17
-#define IN_2_G 16
-// Left encoder channels
-#define ENC_G_CH_A 32
-#define ENC_G_CH_B 33
-// Right encoder channels
-#define ENC_D_CH_A 27
-#define ENC_D_CH_B 14
-// I2C pins
-#define SDA 21
-#define SCL 22
-// I2C addresses
-#define ADDR_IMU 0x6B
-#define ADDR_MAG 0x1E
-
+LSM6DS3 imu(I2C_MODE, 0x6B);  
 unsigned long fin = 0;
-float AngleX = 0.0;
-float AngleStable = 95;
+float AngleStable = 98.5;
 
-int Kp = 6;
-int Ki = 0.01;
-int Kd = 0.05;
+float Kp = 6.0, Ki = 0.02, Kd = 0.3;
+float motorOffset = 42;
 
 float error = 0.0;
 float d_error = 0;
@@ -47,9 +15,7 @@ float I=0.0;
 float D = 0.0;
 
 float PID = 0.0;
-
-LSM6DS3 imu(I2C_MODE, 0x6B);   
-
+float AngleX = 0.0;
 
 void setup () {
   fin = millis();
@@ -58,7 +24,6 @@ void setup () {
 
   imu.settings.gyroRange = 245;
   imu.settings.accelRange = 2;
-
 
   pinMode(EN_D, OUTPUT);
   pinMode(EN_G, OUTPUT);
@@ -101,21 +66,6 @@ void setup () {
 
 }
 
-void stopMotor() {
-
-  ledcWrite(IN_1_D, 0);
-  ledcWrite(IN_2_D, 0);
-  ledcWrite(IN_1_G, 0);
-  ledcWrite(IN_2_G, 0);
-
-}
-
-void move(float speed1, float speed2) {
-  ledcWrite(0, speed1);
-  ledcWrite(1, speed2);
-  ledcWrite(2, speed2);
-  ledcWrite(3, speed1);
-} 
 
 
 
@@ -144,40 +94,67 @@ float AccelZ = imu.readFloatAccelZ() + 0.97;
 float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ))*360/PI; 
 
 // Complementary filter coefficient to balance gyro and accelerometer
-float alpha = 0.95;  
+float alpha = 0.96;  
 
 // Compute final angle by combining gyroscope integration and accelerometer angle
 AngleX = alpha * AngleX + (1 - alpha) * angleAX;
 
 
+  error = AngleStable - AngleX;
 
+  P = Kp * error;
 
-error = AngleStable -  AngleX;
+  I += Ki * error * dt;
+  I = constrain(I, -25, 25); 
 
-
-P = Kp*error;
-I+=Ki*error*dt;
-D=(error-d_error)/dt;
-d_error=error;
+static float prev_error = 0;
+D = Kd * (error - prev_error)/dt; 
+prev_error = error;
 
 PID = P+I+D;
 PID = constrain(PID, -255, 255);
-if(PID >= 0)
-{
-  move(PID,0);
-}else if(PID < 0){
-  move(0,-PID);
-}
+
+
+  PID = constrain(P + I + D, -255, 255);
+
+  // Commande moteur sécurisée
+  int output = abs(PID) + motorOffset;
+  output = constrain(output, 0, 255);  // Limitation manuelle du PWM
+
+  if (PID >= 0) {
+    move(output, 0);  // Moteur droit avance, gauche stop
+  } else {
+    move(0, output);  // Moteur gauche avance, droit stop
+  } 
 
 
 
+Serial.print("Objectif : ");
+Serial.print(AngleStable);
+Serial.print("Angle : ");
 Serial.print(AngleX);
-Serial.print(" | ");
-Serial.print(angleAX);
-Serial.print(" | ");
-Serial.print(PID+50);
-Serial.print(" | ");
-Serial.println(-PID-50);
+Serial.print("PID : ");
+Serial.println(output);
+
+Serial.print(">Objectif : ");
+Serial.println(AngleStable);
+Serial.print(">Angle : ");
+Serial.println(AngleX);
+Serial.print(">PID : ");
+Serial.println(output);
+Serial.print(">P : ");
+Serial.println(P);
+Serial.print(">D : ");
+Serial.println(D);
+
+
+
+
+
+
+
+
+
 
 
 /*
