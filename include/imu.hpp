@@ -10,7 +10,7 @@ constexpr float ACC_Z_BIAS = -0.97f;
 
 constexpr float GYR_X_BIAS = 2.5f;
 
-extern float roll;
+extern float roll_x;
 
 // Décla des fonctions
 void initIMU(LSM6DS3 &imu);

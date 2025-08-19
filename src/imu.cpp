@@ -2,9 +2,8 @@
 #include "config.hpp"
 
 
-
-float roll = 0.0f;
 unsigned long fin = 0;
+float roll_x = 0.0f;
 
 void initIMU(LSM6DS3 &imu) {
     imu.settings.gyroRange = 245;
@@ -24,7 +23,7 @@ float getRoll(LSM6DS3 &imu){
 
     // Estimation de l'angle selon le gyroscope
     float GyroX = imu.readFloatGyroX() - GYR_X_BIAS;
-    roll += GyroX * dt;
+    roll_x += GyroX * dt;
 
     //Estimation de l'angle selon l'accéléromètre
     float AccelX = imu.readFloatAccelX() - ACC_X_BIAS;
@@ -34,6 +33,6 @@ float getRoll(LSM6DS3 &imu){
     float accRoll = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ)) * 360 / PI;
 
     // Compensation de l'angle estimé par le gyroscope par le filtre complémentaire
-    roll = COMP_ALPHA * roll + (1 - COMP_ALPHA) * accRoll;
-    return roll;
+    roll_x = COMP_ALPHA * roll_x + (1 - COMP_ALPHA) * accRoll;
+    return roll_x;
 }
