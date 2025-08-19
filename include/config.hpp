@@ -12,3 +12,6 @@ constexpr int ADDR_MAG = 0x1E;
 // Coefficient du gyro dans le filtre complémentaire
 constexpr float COMP_ALPHA = 0.95f;
 
+extern float dt;
+
+float getDt();

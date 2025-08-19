@@ -50,57 +50,7 @@ void setup () {
 }
 
 void loop () {
-/*
-// Compute elapsed time for integration (in seconds)
-unsigned long debut = millis();
-float dt = (debut - fin)/1000.0; 
-fin = debut;
+  
+  Serial.println(getRoll(imu));
 
-// Read angular velocity from gyroscope (X axis is relevant)
-// Apply approximate offset correction (+2.5°/s)
-float degX =  imu.readFloatGyroX() - 2.5;
-
-// Update estimated angle from gyroscope (accurate short-term, drifts long-term)
-AngleX += degX * dt;
-
-  delay(10);
-
-
-// Read accelerometer measurements
-float AccelX = imu.readFloatAccelX() - 0.02;
-float AccelY = imu.readFloatAccelY() + 0.27;
-float AccelZ = imu.readFloatAccelZ() + 0.97;
-
-// Convert accelerometer readings to tilt angle (degrees between -180 and 180)
-float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ)) * 360 / PI; 
-
-// Complementary filter coefficient to balance gyro and accelerometer
-float alpha = 0.95;  
-
-// Compute final angle by combining gyroscope integration and accelerometer angle
-AngleX = alpha * AngleX + (1 - alpha) * angleAX;
-*/
-Serial.println(getRoll(imu));
-
-
-
-
-/*
-//SEPARATION VLAD
-float gyroX = imu.readFloatGyroX();
-float gyroY = imu.readFloatGyroY();
-float gyroZ = imu.readFloatGyroZ();
-
-float accX = imu.readFloatAccelX();
-float accY = imu.readFloatAccelY();
-float accZ = imu.readFloatAccelZ();
-
-float phiAcc = atan(accY/(sqrt(accX*accX+accZ*accZ)))*180/PI;
-float phiGyr;
-phiGyr += gyroX * dt;
-
-Serial.print(phiAcc);
-Serial.print(" | ");
-Serial.println(phiGyr);
-*/
 }

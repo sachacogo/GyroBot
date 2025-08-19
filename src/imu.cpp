@@ -1,8 +1,6 @@
 #include "imu.hpp"
 #include "config.hpp"
 
-
-unsigned long fin = 0;
 float roll_x = 0.0f;
 
 void initIMU(LSM6DS3 &imu) {
@@ -17,10 +15,6 @@ void initIMU(LSM6DS3 &imu) {
 }
 
 float getRoll(LSM6DS3 &imu){
-    unsigned long debut = millis();
-    float dt = (debut - fin) / 1000.0;
-    fin = debut;
-
     // Estimation de l'angle selon le gyroscope
     float GyroX = imu.readFloatGyroX() - GYR_X_BIAS;
     roll_x += GyroX * dt;
