@@ -147,32 +147,4 @@ Serial.println(P);
 Serial.print(">D : ");
 Serial.println(D);
 
-
-
-
-
-
-
-
-
-
-
-/*
-//SEPARATION VLAD
-float gyroX = imu.readFloatGyroX();
-float gyroY = imu.readFloatGyroY();
-float gyroZ = imu.readFloatGyroZ();
-
-float accX = imu.readFloatAccelX();
-float accY = imu.readFloatAccelY();
-float accZ = imu.readFloatAccelZ();
-
-float phiAcc = atan(accY/(sqrt(accX*accX+accZ*accZ)))*180/PI;
-float phiGyr;
-phiGyr += gyroX * dt;
-
-Serial.print(phiAcc);
-Serial.print(" | ");
-Serial.println(phiGyr);
-*/
 }
