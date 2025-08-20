@@ -4,7 +4,7 @@ LSM6DS3 imu(I2C_MODE, 0x6B);
 unsigned long fin = 0;
 float AngleStable = 98.5;
 
-float Kp = 6.0, Ki = 0.02, Kd = 0.3;
+float Kp = 6, Ki = 0.02, Kd = 0.3;
 float motorOffset = 42;
 
 float error = 0.0;
