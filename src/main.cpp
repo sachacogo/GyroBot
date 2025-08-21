@@ -4,7 +4,7 @@ LSM6DS3 imu(I2C_MODE, 0x6B);
 unsigned long fin = 0;
 float AngleStable = 98.3;
 
-float Kp = 6.3, Ki = 0.1, Kd = 0.21;
+float Kp = 6.3, Ki = 0.0001, Kd = 0.21;
 float motorOffset = 53;
 
 float error = 0.0;
@@ -110,7 +110,7 @@ AngleX = alpha * AngleX + (1 - alpha) * angleAX;
 static float prev_error = 0;
 D = Kd * (error - prev_error)/dt; 
 prev_error = error;
-
+D = constrain(D, -255, 255);
 PID = P+I+D;
 PID = constrain(PID, -255, 255);
 
@@ -135,5 +135,14 @@ Serial.println(output);
 
 Serial.print(">Angle : ");
 Serial.println(AngleX);
-
+Serial.print(">P : ");
+Serial.println(P);
+Serial.print(">I : ");
+Serial.println(I);
+Serial.print(">D : ");
+Serial.println(D);
+Serial.print(">PID : ");
+Serial.println(PID);
+Serial.print(">Consigne : ");
+Serial.println(AngleStable);
 }
