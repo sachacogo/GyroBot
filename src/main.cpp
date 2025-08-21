@@ -50,9 +50,6 @@ void setup () {
   // Le PWM permet de simuler une sortie analogique à partir d'une broche numérique.
   // En ajustant le rapport HIGH/LOW (duty cycle) sur chaque cycle, et en répétant ce cycle à une fréquence élevée (ici 1000 Hz),
   // la broche de sortie fournit un signal perçu comme stable à la valeur moyenne souhaitée.
-
-
-  //ledcSetup(channelPWM, fréquence, résolution) (la résolution donne la précision à laquelle on peut choisir la valeur de notre signal)
   ledcSetup(0, 1000, 8);
   ledcSetup(1, 1000, 8);
   ledcSetup(2, 1000, 8);
@@ -66,8 +63,12 @@ void setup () {
 
 }
 
-
-
+void move(float speed1, float speed2) {
+  ledcWrite(0, speed1);
+  ledcWrite(1, speed2);
+  ledcWrite(2, speed2);
+  ledcWrite(3, speed1);
+} 
 
 void loop () {
 // Compute elapsed time for integration (in seconds)

@@ -29,8 +29,3 @@
 // I2C addresses
 #define ADDR_IMU 0x6B
 #define ADDR_MAG 0x1E
-
-
-
-void stopMotor();
-void move(float speed1, float speed2);
