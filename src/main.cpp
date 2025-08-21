@@ -2,10 +2,10 @@
 
 LSM6DS3 imu(I2C_MODE, 0x6B);  
 unsigned long fin = 0;
-float AngleStable = 98.5;
+float AngleStable = 98.3;
 
-float Kp = 6, Ki = 0.02, Kd = 0.3;
-float motorOffset = 42;
+float Kp = 6.3, Ki = 0.1, Kd = 0.21;
+float motorOffset = 53;
 
 float error = 0.0;
 float d_error = 0;
@@ -13,6 +13,8 @@ float d_error = 0;
 float P = 0.0;
 float I=0.0;
 float D = 0.0;
+
+float D_filtre =0.0;
 
 float PID = 0.0;
 float AngleX = 0.0;
@@ -111,7 +113,9 @@ static float prev_error = 0;
 D = Kd * (error - prev_error)/dt; 
 prev_error = error;
 
-PID = P+I+D;
+D_filtre = 0.9 * D_filtre + 0.1 * D;
+
+PID = P+I+D_filtre;
 PID = constrain(PID, -255, 255);
 
 
