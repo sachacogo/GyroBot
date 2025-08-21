@@ -14,8 +14,6 @@ float P = 0.0;
 float I=0.0;
 float D = 0.0;
 
-float D_filtre =0.0;
-
 float PID = 0.0;
 float AngleX = 0.0;
 
@@ -113,13 +111,8 @@ static float prev_error = 0;
 D = Kd * (error - prev_error)/dt; 
 prev_error = error;
 
-D_filtre = 0.9 * D_filtre + 0.1 * D;
-
-PID = P+I+D_filtre;
+PID = P+I+D;
 PID = constrain(PID, -255, 255);
-
-
-  PID = constrain(P + I + D, -255, 255);
 
   // Commande moteur sécurisée
   int output = abs(PID) + motorOffset;
@@ -140,15 +133,7 @@ Serial.print(AngleX);
 Serial.print("PID : ");
 Serial.println(output);
 
-Serial.print(">Objectif : ");
-Serial.println(AngleStable);
 Serial.print(">Angle : ");
 Serial.println(AngleX);
-Serial.print(">PID : ");
-Serial.println(output);
-Serial.print(">P : ");
-Serial.println(P);
-Serial.print(">D : ");
-Serial.println(D);
 
 }
