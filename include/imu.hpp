@@ -1,7 +1,5 @@
 #pragma once
-#include <Arduino.h>
-#include "SparkFunLSM6DS3.h"
-
+# include "config.hpp"
 
 // Offsets des capteurs
 constexpr float ACC_X_BIAS = 0.02f;

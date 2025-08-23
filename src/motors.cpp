@@ -1,12 +1,12 @@
 #include "motors.hpp"
-#include "pins.hpp"
-#include "config.hpp"
 
 float P = 0.0f;
 float I = 0.0f;
 float D = 0.0f;
 float PID = 0.0f;
 float error = 0.0f;
+float prev_error = 0.0f;
+int output = 0;
 
 void initMotors() {
     pinMode(EN_D, OUTPUT);
@@ -49,8 +49,22 @@ float getPID(float roll_x) {
     P = Kp * error;
     I += Ki * error * dt;
     I = constrain(I, -25, 25);
+    D = Kd * (error - prev_error) / dt;
+    prev_error = error;
+    D = constrain(D, -255, 255);
 
-    // Questionnement previous error : dans le code final, prev_error est toujours réinitialisé avec cette ligne : static float prev_error = 0;
-    // La prochaine version vise à corriger cette erreur : si on obtient des résultats moins satisfaisants, on restera sur la même logique.
+    PID = P + I + D;
+    PID = constrain(PID, -255, 255);
+    return PID;
+}
 
+void stabilize(float pid) {
+    output = abs(pid) + motorOffset;
+    output = constrain(output, 0, 255);  // Limitation manuelle du PWM
+
+    if (pid > 0) {
+        move(output, 0);  // Moteur droit avance, gauche stop
+    } else {
+        move(0, output);  // Moteur gauche avance, droit stop
+    }
 }
