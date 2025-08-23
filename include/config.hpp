@@ -17,6 +17,9 @@ constexpr int ADDR_MAG = 0x1E;
 // Coefficient du gyro dans le filtre complémentaire
 constexpr float COMP_ALPHA = 0.95f;
 
+// Angle stable (à partir duquel on considère que le robot est à l'équilibre)
+constexpr float STABLE_ANGLE = 98.3f;
+
 extern float dt;
 
 float getDt();

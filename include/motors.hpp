@@ -12,6 +12,7 @@ extern float I;
 extern float D;
 extern float PID;
 extern float error;
-extern float d_error;
 
 void initMotors();
+void move(float speed1, float speed2);
+float getPID(float roll_x);

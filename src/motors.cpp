@@ -2,6 +2,12 @@
 #include "pins.hpp"
 #include "config.hpp"
 
+float P = 0.0f;
+float I = 0.0f;
+float D = 0.0f;
+float PID = 0.0f;
+float error = 0.0f;
+
 void initMotors() {
     pinMode(EN_D, OUTPUT);
     pinMode(EN_G, OUTPUT);
@@ -29,4 +35,22 @@ void initMotors() {
     ledcAttachPin(IN_2_D, 1);
     ledcAttachPin(IN_1_G, 2);
     ledcAttachPin(IN_2_G, 3);
+}
+
+void move(float speed1, float speed2) {
+    ledcWrite(0, speed1);
+    ledcWrite(1, speed2);
+    ledcWrite(2, speed2);
+    ledcWrite(3, speed1);
+}
+
+float getPID(float roll_x) {
+    error = STABLE_ANGLE - roll_x;
+    P = Kp * error;
+    I += Ki * error * dt;
+    I = constrain(I, -25, 25);
+
+    // Questionnement previous error : dans le code final, prev_error est toujours réinitialisé avec cette ligne : static float prev_error = 0;
+    // La prochaine version vise à corriger cette erreur : si on obtient des résultats moins satisfaisants, on restera sur la même logique.
+
 }
