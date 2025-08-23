@@ -1,12 +1,6 @@
 #include "pins.hpp"
 #include "imu.hpp"
 #include "config.hpp"
-#include <Arduino.h>
-#include "SparkFunLSM6DS3.h"
-#include "Wire.h"
-#include "SPI.h"
-#include <math.h>
-#include <Adafruit_Sensor.h>
 
 
 
@@ -14,7 +8,6 @@ LSM6DS3 imu(I2C_MODE, 0x6B);
 
 
 void setup () {
-  fin = millis();
   Serial.begin(SERIAL_BAUD);
   Wire.begin(SDA_PIN, SCL_PIN);
   initIMU(imu);
