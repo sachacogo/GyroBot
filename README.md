@@ -42,6 +42,10 @@ The GyroBot stabilizes itself around its equilibrium point using an IMU to estim
 ### PID Tuning
 Tune Kp, Ki, Kd empirically: start with Kp, add Kd for damping, then small Ki for stability.
 
+## Acknowledgements
+
+This project was created by **sachacogo** for educational purposes, specifically to help **vlad-vrn** learn about self-balancing robots, PID control, and sensor fusion.
+
 ## License
 
 MIT License - see LICENSE file for details.
