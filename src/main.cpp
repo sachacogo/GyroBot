@@ -1,19 +1,21 @@
 #include "gyro.hpp"
 
+// IMU object LSM6DS3 accelerometer + gyroscope
 LSM6DS3 imu(I2C_MODE, 0x6B);  
+
 unsigned long fin = 0;
-float AngleStable = 98.3;
+float AngleStable = 98.3;   // Experimentally determined equilibrium angle
 
+// PID gains
 float Kp = 6.3, Ki = 0.0001, Kd = 0.21;
-float motorOffset = 53;
+float motorOffset = 53;     // Minimum PWM needed to overcome motor dead zone
 
+// PID state variables
 float error = 0.0;
 float d_error = 0;
-
 float P = 0.0;
-float I=0.0;
+float I = 0.0;
 float D = 0.0;
-
 float PID = 0.0;
 float AngleX = 0.0;
 
@@ -22,43 +24,43 @@ void setup () {
   Serial.begin(115200);
   Wire.begin(SDA, SCL);
 
+  // Configure IMU sensitivity
   imu.settings.gyroRange = 245;
   imu.settings.accelRange = 2;
 
+  // Enable motor drivers
   pinMode(EN_D, OUTPUT);
   pinMode(EN_G, OUTPUT);
-
   digitalWrite(EN_D, HIGH);
   digitalWrite(EN_G, HIGH);
 
+  // Motor PWM pins
   pinMode(IN_1_D, OUTPUT);
   pinMode(IN_2_D, OUTPUT);
   pinMode(IN_1_G, OUTPUT);
   pinMode(IN_2_G, OUTPUT);
 
-  if( imu.begin() != 0 )
-  {
+  // Initialize IMU
+  if ( imu.begin() != 0 ) {
     Serial.print("Error at beginCore().\n");
-  }
-  else
-  {
+  } else {
     Serial.print("\nbeginCore() passed.\n");
   }
 
-//associe à un channel de pwm une vitesse d'oscillation et une résolution 
+  // Configure PWM channels (0–3) with 1 kHz frequency, 8-bit resolution
   ledcSetup(0, 1000, 8);
   ledcSetup(1, 1000, 8);
   ledcSetup(2, 1000, 8);
   ledcSetup(3, 1000, 8);
 
-  //association des PINs et des channelPWM
+  // Link PWM channels to output pins
   ledcAttachPin(IN_1_D, 0);
   ledcAttachPin(IN_2_D, 1);
   ledcAttachPin(IN_1_G, 2);
   ledcAttachPin(IN_2_G, 3);
-
 }
 
+// Set motor PWM commands
 void move(float speed1, float speed2) {
   ledcWrite(0, speed1);
   ledcWrite(1, speed2);
@@ -67,79 +69,94 @@ void move(float speed1, float speed2) {
 } 
 
 void loop () {
-// Compute elapsed time for integration (in seconds)
-unsigned long debut = millis();
-float dt = (debut - fin)/1000.0; 
-fin = debut;
-
-// Read angular velocity from gyroscope (X axis is relevant)
-// Apply approximate offset correction (+2.5°/s)
-float degX =  imu.readFloatGyroX() - 2.5;
-
-// Update estimated angle from gyroscope (accurate short-term, drifts long-term)
-AngleX += degX * dt;
-
-  delay(10);
+ 
+  //Time step for integrations
+  unsigned long debut = millis();
+  float dt = (debut - fin) / 1000.0;  
+  fin = debut;
 
 
-// Read accelerometer measurements
-float AccelX = imu.readFloatAccelX() - 0.02;
-float AccelY = imu.readFloatAccelY() + 0.27;
-float AccelZ = imu.readFloatAccelZ() + 0.97;
+    // Gyroscope integration
+    // Gyro X axis is relevant for balancing
+    float degX = imu.readFloatGyroX() - 2.5; // Preliminary gyro offset correction
+    AngleX += degX * dt;  
 
-// Convert accelerometer readings to tilt angle (degrees between -180 and 180)
-float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ))*360/PI; 
-
-// Complementary filter coefficient to balance gyro and accelerometer
-float alpha = 0.96;  
-
-// Compute final angle by combining gyroscope integration and accelerometer angle
-AngleX = alpha * AngleX + (1 - alpha) * angleAX;
+    delay(10);
 
 
+    //Accelerometer measurement
+    //With pre-filter accelerometer offset adjustment  
+    float AccelX = imu.readFloatAccelX() - 0.02;
+    float AccelY = imu.readFloatAccelY() + 0.27;
+    float AccelZ = imu.readFloatAccelZ() + 0.97;
+
+  // Convert accelerometer data into tilt angle
+  float angleAX = atan2(AccelY, sqrt(AccelX*AccelX + AccelZ*AccelZ)) * 360 / PI; 
+
+  // Complementary filter: combines gyro (short-term accuracy) and accel (long-term stability)
+  float alpha = 0.96;  
+  AngleX = alpha * AngleX + (1 - alpha) * angleAX;
+
+
+  // PID control
   error = AngleStable - AngleX;
 
+  // Proportional term
   P = Kp * error;
 
+  // Integral term with anti-windup
   I += Ki * error * dt;
   I = constrain(I, -25, 25); 
 
-static float prev_error = 0;
-D = Kd * (error - prev_error)/dt; 
-prev_error = error;
-D = constrain(D, -255, 255);
-PID = P+I+D;
-PID = constrain(PID, -255, 255);
+  // Derivative term
+  static float prev_error = 0;
+  D = Kd * (error - prev_error) / dt; 
+  prev_error = error;
+  D = constrain(D, -255, 255);
 
-  // Commande moteur sécurisée
-  int output = abs(PID) + motorOffset;
-  output = constrain(output, 0, 255);  // Limitation manuelle du PWM
+  // PID output
+  PID = P + I + D;
+  PID = constrain(PID, -255, 255);
+
+  // Motor command
+
+  int output = abs(PID) + motorOffset;   // add offset to overcome motor dead zone
+  output = constrain(output, 0, 255);    // clamp to valid PWM range
 
   if (PID >= 0) {
-    move(output, 0);  // Moteur droit avance, gauche stop
+    move(output, 0);  // forward right motor
   } else {
-    move(0, output);  // Moteur gauche avance, droit stop
+    move(0, output);  // forward left motor
   } 
 
 
+  //Teleplot view of main signals  
+  Serial.print("Objectif : ");
+  Serial.print(AngleStable);
+  Serial.print("Angle : ");
+  Serial.print(AngleX);
+  Serial.print("PID : ");
+  Serial.println(output);
 
-Serial.print("Objectif : ");
-Serial.print(AngleStable);
-Serial.print("Angle : ");
-Serial.print(AngleX);
-Serial.print("PID : ");
-Serial.println(output);
-
-Serial.print(">Angle : ");
-Serial.println(AngleX);
-Serial.print(">P : ");
-Serial.println(P);
-Serial.print(">I : ");
-Serial.println(I);
-Serial.print(">D : ");
-Serial.println(D);
-Serial.print(">PID : ");
-Serial.println(PID);
-Serial.print(">Consigne : ");
-Serial.println(AngleStable);
+  Serial.print(">Angle : ");
+  Serial.println(AngleX);
+  Serial.print(">P : ");
+  Serial.println(P);
+  Serial.print(">I : ");
+  Serial.println(I);
+  Serial.print(">D : ");
+  Serial.println(D);
+  Serial.print(">PID : ");
+  Serial.println(PID);
+  Serial.print(">Consigne : ");
+  Serial.println(AngleStable);
 }
+
+
+/*
+  GyroBot - Self-Balancing Robot
+  Created by sachacogo for educational purposes (for vlad-vrn)
+
+  Licensed under the MIT License.
+  See LICENSE file for details.
+*/
