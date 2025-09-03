@@ -45,11 +45,7 @@ void setup () {
     Serial.print("\nbeginCore() passed.\n");
   }
 
-  // Utilisation du PWM sur l'ESP32, car cette dernière ne dispose pas de broches analogiques.
-  // On associe une broche GPIO numérique à un canal PWM.
-  // Le PWM permet de simuler une sortie analogique à partir d'une broche numérique.
-  // En ajustant le rapport HIGH/LOW (duty cycle) sur chaque cycle, et en répétant ce cycle à une fréquence élevée (ici 1000 Hz),
-  // la broche de sortie fournit un signal perçu comme stable à la valeur moyenne souhaitée.
+//associe à un channel de pwm une vitesse d'oscillation et une résolution 
   ledcSetup(0, 1000, 8);
   ledcSetup(1, 1000, 8);
   ledcSetup(2, 1000, 8);
