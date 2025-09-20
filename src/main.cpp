@@ -1,4 +1,5 @@
 #include "gyro.hpp"
+#include "move.hpp"
 
 // IMU object LSM6DS3 accelerometer + gyroscope
 LSM6DS3 imu(I2C_MODE, 0x6B);  
@@ -59,14 +60,6 @@ void setup () {
   ledcAttachPin(IN_1_G, 2);
   ledcAttachPin(IN_2_G, 3);
 }
-
-// Set motor PWM commands
-void move(float speed1, float speed2) {
-  ledcWrite(0, speed1);
-  ledcWrite(1, speed2);
-  ledcWrite(2, speed2);
-  ledcWrite(3, speed1);
-} 
 
 void loop () {
  
